@@ -1,133 +1,224 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Calculator App</title>
+  <meta charset="UTF-8">
+  <title>Professional Scientific Calculator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <script src="https://cdn.jsdelivr.net/npm/mathjs@11/lib/browser/math.js"></script>
+  <script src="https://cdn.plot.ly/plotly-2.24.2.min.js"></script>
+
   <style>
     body {
+      margin: 0;
+      background: #000;
+      font-family: "Segoe UI", Arial, sans-serif;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
-      background: #f0f2f5;
-      font-family: Arial, sans-serif;
     }
 
     .calculator {
-      background: #222;
-      padding: 20px;
+      width: 380px;
+      background: #1c1c1c;
       border-radius: 12px;
-      width: 260px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+      box-shadow: 0 0 25px rgba(0,0,0,0.8);
     }
 
     .display {
-      width: 100%;
-      height: 60px;
-      background: #000;
-      color: #0f0;
-      font-size: 24px;
+      background: #e9eef3;
+      color: #000;
+      padding: 15px;
       text-align: right;
-      padding: 10px;
-      border-radius: 8px;
-      margin-bottom: 15px;
-      box-sizing: border-box;
-      overflow-x: auto;
+      min-height: 90px;
     }
 
-    .buttons {
+    .display small {
+      float: left;
+      color: #555;
+    }
+
+    .display .value {
+      font-size: 32px;
+      margin-top: 20px;
+      word-wrap: break-word;
+    }
+
+    .keys {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
+      grid-template-columns: repeat(5, 1fr);
     }
 
     button {
-      height: 50px;
-      font-size: 18px;
-      border: none;
-      border-radius: 8px;
+      height: 52px;
+      border: 1px solid #2a2a2a;
+      background: #3a3a3a;
+      color: #fff;
+      font-size: 15px;
       cursor: pointer;
     }
 
-    button.number {
-      background: #444;
-      color: #fff;
-    }
+    button.func { background: #5a5a5a; }
+    button.op { background: #707070; }
+    button.eq { background: #00b894; font-size: 22px; }
+    button.ac { background: #f39c12; }
+    button:hover { filter: brightness(1.1); }
 
-    button.operator {
-      background: #ff9500;
-      color: #fff;
-    }
-
-    button.clear {
-      background: #ff3b30;
-      color: #fff;
-    }
-
-    button.equal {
-      background: #34c759;
-      color: #fff;
-      grid-column: span 2;
-    }
-
-    button:hover {
-      opacity: 0.85;
+    #graph {
+      margin-top: 10px;
+      height: 250px;
+      display: none;
     }
   </style>
 </head>
 <body>
-
-  <div class="calculator">
-    <div id="display" class="display">0</div>
-
-    <div class="buttons">
-      <button class="clear" onclick="clearDisplay()">C</button>
-      <button class="operator" onclick="appendValue('/')">÷</button>
-      <button class="operator" onclick="appendValue('*')">×</button>
-      <button class="operator" onclick="appendValue('-')">−</button>
-
-      <button class="number" onclick="appendValue('7')">7</button>
-      <button class="number" onclick="appendValue('8')">8</button>
-      <button class="number" onclick="appendValue('9')">9</button>
-      <button class="operator" onclick="appendValue('+')">+</button>
-
-      <button class="number" onclick="appendValue('4')">4</button>
-      <button class="number" onclick="appendValue('5')">5</button>
-      <button class="number" onclick="appendValue('6')">6</button>
-      <button class="equal" onclick="calculate()">=</button>
-
-      <button class="number" onclick="appendValue('1')">1</button>
-      <button class="number" onclick="appendValue('2')">2</button>
-      <button class="number" onclick="appendValue('3')">3</button>
-      <button class="number" onclick="appendValue('0')">0</button>
-      <button class="number" onclick="appendValue('.')">.</button>
-    </div>
+<div class="calculator">
+  <div class="display">
+    <small id="mode">DEG</small>
+    <div id="display" class="value">0</div>
   </div>
 
-  <script>
-    let display = document.getElementById("display");
+  <div class="keys">
+    <!-- SHIFT ROW -->
+    <button class="func" onclick="toggleShift()">SHIFT</button>
+    <button class="func" onclick="insert('sinh(')">sinh</button>
+    <button class="func" onclick="insert('cosh(')">cosh</button>
+    <button class="func" onclick="insert('tanh(')">tanh</button>
+    <button class="ac" onclick="clearAll()">AC</button>
 
-    function appendValue(value) {
-      if (display.innerText === "0") {
-        display.innerText = value;
-      } else {
-        display.innerText += value;
+    <!-- TRIG -->
+    <button class="func" onclick="insert('sin(')">sin</button>
+    <button class="func" onclick="insert('cos(')">cos</button>
+    <button class="func" onclick="insert('tan(')">tan</button>
+    <button class="func" onclick="insert('log(')">log</button>
+    <button class="op" onclick="insert('/')">÷</button>
+
+    <!-- POWERS -->
+    <button class="func" onclick="insert('sqrt(')">√</button>
+    <button class="func" onclick="insert('cbrt(')">∛</button>
+    <button class="func" onclick="insert('^2')">x²</button>
+    <button class="func" onclick="insert('^')">xʸ</button>
+    <button class="op" onclick="insert('*')">×</button>
+
+    <!-- NUMBERS -->
+    <button onclick="insert('7')">7</button>
+    <button onclick="insert('8')">8</button>
+    <button onclick="insert('9')">9</button>
+    <button class="op" onclick="insert('-')">−</button>
+    <button class="func" onclick="insert('!')">n!</button>
+
+    <button onclick="insert('4')">4</button>
+    <button onclick="insert('5')">5</button>
+    <button onclick="insert('6')">6</button>
+    <button class="op" onclick="insert('+')">+</button>
+    <button class="func" onclick="insert('pi')">π</button>
+
+    <button onclick="insert('1')">1</button>
+    <button onclick="insert('2')">2</button>
+    <button onclick="insert('3')">3</button>
+    <button class="func" onclick="differentiate()">d/dx</button>
+    <button class="func" onclick="integrate()">∫dx</button>
+
+    <button onclick="insert('0')">0</button>
+    <button onclick="insert('.')">.</button>
+    <button onclick="insert('(')">(</button>
+    <button onclick="insert(')')">)</button>
+    <button class="eq" onclick="calculate()">=</button>
+
+    <button class="func" onclick="toggleAngle()">RAD/DEG</button>
+  </div>
+
+  <div id="graph"></div>
+</div>
+
+<script>
+const display = document.getElementById('display');
+const modeLabel = document.getElementById('mode');
+let angleMode = 'DEG';
+
+function insert(val) {
+  if (display.innerText === '0') display.innerText = '';
+  display.innerText += val;
+}
+
+function clearAll() {
+  display.innerText = '0';
+  document.getElementById('graph').style.display = 'none';
+}
+
+function toggleShift() { alert('SHIFT active (conceptual)'); }
+
+function toggleAngle() {
+  angleMode = angleMode === 'DEG' ? 'RAD' : 'DEG';
+  modeLabel.innerText = angleMode;
+}
+
+function calculate() {
+  try {
+    let expr = display.innerText.replace(/×/g, '*').replace(/÷/g, '/');
+
+    // Apply DEG conversion if needed
+    if (angleMode === 'DEG') {
+      expr = expr.replace(/sin\(/g, 'sin(pi/180*')
+                 .replace(/cos\(/g, 'cos(pi/180*')
+                 .replace(/tan\(/g, 'tan(pi/180*');
+    }
+
+    // If contains x or y, generate graph
+    if (/x|y/.test(expr)) {
+      plotGraph(expr);
+      display.innerText = expr; // keep original expression
+      return;
+    }
+
+    const result = math.evaluate(expr);
+    display.innerText = result;
+  } catch {
+    display.innerText = 'Error';
+  }
+}
+
+function differentiate() {
+  try {
+    const expr = display.innerText;
+    const d = math.derivative(expr, 'x').toString();
+    display.innerText = d;
+  } catch { display.innerText = 'Error'; }
+}
+
+function integrate() {
+  display.innerText = '∫(' + display.innerText + ') dx';
+}
+
+function plotGraph(expr) {
+  const xValues = math.range(-10,10,0.1).toArray();
+  const yValues = xValues.map(x => {
+    try {
+      let val = math.evaluate(expr.replace(/x/g, `(${x})`));
+      if (angleMode === 'DEG') {
+        val = math.evaluate(expr.replace(/x/g, `(${x}*pi/180)`));
       }
-    }
+      return val;
+    } catch { return NaN; }
+  });
 
-    function clearDisplay() {
-      display.innerText = "0";
-    }
-
-    function calculate() {
-      try {
-        display.innerText = eval(display.innerText);
-      } catch (error) {
-        display.innerText = "Error";
-      }
-    }
-  </script>
-
+  const graphDiv = document.getElementById('graph');
+  graphDiv.style.display = 'block';
+  Plotly.newPlot(graphDiv, [{
+    x: xValues,
+    y: yValues,
+    type: 'scatter',
+    mode: 'lines',
+    marker: {color: 'lime'}
+  }], {
+    margin: {t: 20},
+    paper_bgcolor: '#1c1c1c',
+    plot_bgcolor: '#000',
+    font: {color: 'white'}
+  });
+}
+</script>
 </body>
 </html>
